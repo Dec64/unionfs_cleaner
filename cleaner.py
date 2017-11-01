@@ -44,10 +44,32 @@ else:
 
 logger.debug("Using config:\n%s", json.dumps(config, sort_keys=True, indent=4))
 
+############################################################
+# ROUND ROBIN CLOUD SERVER SELECTION
+############################################################
+
+round_number = 0
+
+
+def cloud_selector():
+    global round_number
+    if len(config['local_remote']) == 1:
+        return config['local_remote'][0]
+    else:
+        length = len(config['local_remote']) - 1
+        if length == round_number:
+            remote = config['local_remote'][round_number]
+            round_number = 0
+            return remote
+        else:
+            remote = config['local_remote'][round_number]
+            round_number += 1
+            return remote
 
 ############################################################
 # HIDDEN REMOVER
 ############################################################
+
 
 def remove_hidden():
     hidden = 0
@@ -89,6 +111,8 @@ default_check_interval = 0
 
 def upload_manager():
     global config, default_check_interval
+    cloud_server = cloud_selector()
+    logger.info("Using cloud server: %s" % (str(cloud_server)))
     try:
         default_check_interval = config['local_folder_check_interval']
         logger.debug("Started upload manager for %r", config['local_folder'])
@@ -130,8 +154,11 @@ def upload_manager():
 
                     # remove hidden before upload
                     # (we don't want to delete a hidden from remote, after already replacing it)
-                    logger.debug("Purging _HIDDEN~ before upload commences")
-                    remove_hidden()
+                    if config['purge']:
+                        logger.debug("Purging _HIDDEN~ before upload commences")
+                        remove_hidden()
+                    else:
+                        logger.debug("Purging _HIDDEN~ not wanted, commence upload")
 
                     # send start notification
                     if config['pushover_app_token'] and config['pushover_user_token']:
@@ -139,24 +166,30 @@ def upload_manager():
                                             "Upload process started. %d gigabytes to upload." % size)
 
                     # rclone move local_folder to local_remote
-                    logger.debug("Moving data from %r to %r...", config['local_folder'], config['local_remote'])
-                    upload_cmd = utils.rclone_move_command(config['local_folder'], config['local_remote'],
-                                                           config['rclone_transfers'], config['rclone_checkers'],
-                                                           config['rclone_bwlimit'], config['rclone_excludes'],
-                                                           config['rclone_chunk_size'], config['dry_run'])
+                    logger.debug("Moving data from %r to %r...", config['local_folder'], cloud_server)
+                    upload_cmd = utils.rclone_move_command(config['local_folder'],
+                                                           cloud_server,
+                                                           config['rclone_transfers'],
+                                                           config['rclone_checkers'],
+                                                           config['rclone_bwlimit'],
+                                                           config['rclone_excludes'],
+                                                           config['rclone_chunk_size'],
+                                                           config['dry_run'])
                     logger.debug("Using: %r", upload_cmd)
 
                     start_time = timeit.default_timer()
                     utils.run_command(upload_cmd, config)
                     time_taken = timeit.default_timer() - start_time
                     logger.debug("Moving finished in %s", utils.seconds_to_string(time_taken))
+                    cloud_server = cloud_selector()
+                    logger.info("Using cloud server: %s" % (str(cloud_server)))
 
                     # remove empty directories
                     if len(config['rclone_remove_empty_on_upload']):
                         time.sleep(5)
                         utils.remove_empty_directories(config)
 
-                    new_size = utils.folder_size(config['local_folder'], config['du_excludes'])
+                    new_size = utils.folder_size(config['local_folder'],config['du_excludes'])
                     logger.debug("Local folder is now left with %d gigabytes", new_size)
 
                     # send finish notification
@@ -175,6 +208,7 @@ def upload_manager():
 ############################################################
 # CONFIG MONITOR
 ############################################################
+
 
 def config_monitor():
     old_config = utils.read_file_text('config.json')
@@ -199,6 +233,7 @@ def config_monitor():
 ############################################################
 # PROCESS STUFF
 ############################################################
+
 processes = []
 
 
@@ -257,9 +292,9 @@ if __name__ == "__main__":
                 remove_hidden()
                 exit(0)
 
-    logger.debug("Current branch: %s", updater.active_branch())
-    logger.debug("Current version: %s", updater.current_version())
-    logger.debug("Latest version: %s", updater.latest_version())
+    #logger.debug("Current branch: %s", updater.active_branch())
+    #logger.debug("Current version: %s", updater.current_version())
+    #logger.debug("Latest version: %s", updater.latest_version())
     if config['use_git_autoupdater'] and updater.update():
         logger.debug("Restarting...")
         sys.exit(1)

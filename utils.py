@@ -256,6 +256,7 @@ base_config = {
     'use_upload_manager': False,  # whether or not to start the upload manager upon script start
     'use_git_autoupdater': False,  # whether to automatically update (git pull) when theres a new commit on script start
     'dry_run': True,  # whether or not to use dry-run with rclone so no files are deleted/moved. use to verify working.
+    'purge': True  # whether or not to remove .hidden files and there counterparts in cloud.
 }
 
 
@@ -322,9 +323,14 @@ def config_test(config):
     size = folder_size(config['local_folder'], config['du_excludes'])
     logger.debug("Local folder size is %d gigabytes", size)
     logger.debug("Testing local_folder, local_remote, rclone_transfers, rclone_checkers, rclone_excludes and dry_run")
-    upload_cmd = rclone_move_command(config['local_folder'], config['local_remote'], config['rclone_transfers'],
-                                     config['rclone_checkers'], config['rclone_bwlimit'], config['rclone_excludes'],
-                                     config['rclone_chunk_size'], config['dry_run'])
+    upload_cmd = rclone_move_command(config['local_folder'],
+                                     config['local_remote'],
+                                     config['rclone_transfers'],
+                                     config['rclone_checkers'],
+                                     config['rclone_bwlimit'],
+                                     config['rclone_excludes'],
+                                     config['rclone_chunk_size'],
+                                     config['dry_run'])
     logger.debug("Rclone move command, I would have ran:\n%r", upload_cmd)
 
     # show example of folders that would have been removed after upload
