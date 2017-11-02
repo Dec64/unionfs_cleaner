@@ -119,10 +119,10 @@ def upload_manager():
         while True:
             time.sleep(60 * config['local_folder_check_interval'])
 
-            # restore check interval to original after an extended sleep after a rate limit ban (25hrs)
-            if config['local_folder_check_interval'] == 1500:
+            # restore check interval to original after an extended sleep after a rate limit ban (1hr)
+            if config['local_folder_check_interval'] == 60:
                 config['local_folder_check_interval'] = default_check_interval
-                logger.info("Restored local_folder_check_interval to %d minutes after an extended sleep (25 hours) due "
+                logger.info("Restored local_folder_check_interval to %d minutes after an extended sleep (1 hour) due "
                             "to the last upload being cancelled due to rate limits!",
                             config['local_folder_check_interval'])
                 if config['pushover_app_token'] and config['pushover_user_token']:

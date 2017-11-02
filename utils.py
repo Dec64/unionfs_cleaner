@@ -66,7 +66,7 @@ def run_command(command, cfg=None):
                     logger.error("Error 403 detected 5 times, cancelling upload...")
                     process.kill()
                     rate_limits_seen = 0
-                    cfg['local_folder_check_interval'] = 1500
+                    cfg['local_folder_check_interval'] = 60
                     logger.info("Set local_folder_check_interval to %d mins because of rate limits",
                                 cfg['local_folder_check_interval'])
                     # send cancelled notification
