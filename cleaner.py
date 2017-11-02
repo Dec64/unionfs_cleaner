@@ -195,8 +195,8 @@ def upload_manager():
                     # send finish notification
                     if config['pushover_app_token'] and config['pushover_user_token']:
                         utils.send_pushover(config['pushover_app_token'], config['pushover_user_token'],
-                                            "Upload process finished in %s. %d gigabytes left over." %
-                                            (utils.seconds_to_string(time_taken), new_size))
+                                            "Upload process finished in %s. %d gigabytes left over. Used %s cloud server" %
+                                            (utils.seconds_to_string(time_taken), new_size, str(cloud_server)))
 
                 else:
                     logger.debug("Local folder is still under the max size by %d gigabytes",
